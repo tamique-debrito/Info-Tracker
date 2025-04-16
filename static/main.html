@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Todos</title>
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+
+        /* The Modal (background) - copied from w3schools */
+        .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        padding-top: 100px; /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        }
+
+        .close-modal-button {
+        color: #aaaaaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        }
+
+        .close-modal-button:hover,
+        .close-modal-button:focus {
+        color: #000;
+        text-decoration: none;
+        cursor: pointer;
+        }
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .todo-item {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            border-bottom: 1px solid #ccc;
+        }
+        .title {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .detail, .due-date, .status {
+            margin-left: 1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Todos</h1>
+    <hr />
+    <div id="todo-list">Loading...</div>
+    <hr />
+    <button id="newTodoButton">Add Todo</button>
+    <div id="newTodoModal" class="modal"> <!-- Currently this is just for creating a new todo. May want to create dynamically if more modal types are required -->
+        <div class="modal-content">
+          <span class="close-modal-button" id="close-modal-button">&times;</span>
+          <h2>Add New Todo</h2>
+          <form id="todo-form">
+            <label>
+                Title: <input type="text" name="title" required>
+            </label><br><br>
+            <label>
+                Detail: <input type="text" name="detail" required>
+            </label><br><br>
+            <label>
+                Due Date: <input type="date" name="due_date" required>
+            </label><br><br>
+            <button type="submit">Add Todo</button>
+        </form>
+        </div>
+      
+    </div>
+    <script>
+        async function loadTodos() {
+            try {
+                const response = await fetch('/info_items');
+                const todos = await response.json();
+
+                const container = document.getElementById('todo-list');
+                container.innerHTML = '';
+
+                if (todos.length === 0) {
+                    container.innerHTML = "No Todos found"
+                }
+
+                todos.forEach(item => {
+                    const todoDiv = document.createElement('div');
+                    todoDiv.className = 'todo-item';
+
+                    todoDiv.innerHTML = `
+                        <div class="title">${item.title}</div>
+                        <div class="detail">Detail: ${item.detail}</div>
+                        <div class="due-date">Due Date: ${item.due_date}</div>
+                        <div class="status">Status: ${item.status}</div>
+                        <button onclick="markAsDone('${item.id}')">Mark Done</button>
+                    `;
+
+                    container.appendChild(todoDiv);
+                });
+            } catch (error) {
+                document.getElementById('todo-list').innerText = 'Failed to load todos.';
+                console.error('Error loading todos:', error);
+            }
+        }
+
+        window.onload = loadTodos;
+
+        // Modal handling
+        var modal = document.getElementById("newTodoModal");
+        var btn = document.getElementById("newTodoButton");
+        var span = document.getElementById("close-modal-button");
+        btn.onclick = function() {
+            modal.style.display = "block";
+        }
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Handle marking todos as done
+        async function markAsDone(id) {
+            try {
+                const response = await fetch(`/info_items/${id}/done`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to mark as done: ${response.statusText}`);
+                }
+
+                alert('Marked as done!');
+                loadTodos(); // refresh the list
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // Handle creating a new todo
+        document.getElementById('todo-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const title = formData.get('title');
+            const detail = formData.get('detail');
+            const due_date = formData.get('due_date');
+
+            try {
+                const response = await fetch('/info_items', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, detail, due_date })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                alert('Todo added successfully!');
+                form.reset();
+
+                // Optionally refresh the todo list
+                if (typeof loadTodos === 'function') {
+                    loadTodos();
+                }
+
+            } catch (err) {
+                alert('Failed to add todo: ' + err.message);
+                console.error(err);
+            }
+        });
+
+    </script>
+</body>
+</html>
