@@ -1,4 +1,6 @@
+from datetime import date
 from enum import Enum
+from uuid import UUID
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -13,20 +15,20 @@ class Status(Enum):
     Active = 1
     Done = 2
 
-class InfoElement(BaseModel):
-    id: int
+class InfoItem(BaseModel):
+    id: UUID
     title: str
     detail: str
-    due_date: str
+    due_date: date
     status: Status = Status.Active
 
-def load_db() -> Dict[int, InfoElement]:
+def load_db() -> Dict[UUID, InfoItem]:
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "rb") as f:
             return pickle.load(f)
     return {}
 
-def save_db(db: Dict[int, InfoElement]):
+def save_db(db: Dict[UUID, InfoItem]):
     with open(DB_FILE, "wb") as f:
         pickle.dump(db, f)
 
@@ -42,16 +44,24 @@ def get_main_page():
     </html>
     """
 
-@app.get("/todos")
-def get_todos():
+@app.get("/info_items")
+def get_info_items():
     db = load_db()
-    return [todo.dict() for todo in db.values()]
+    return [info_item.dict() for info_item in db.values()]
 
-@app.post("/todos/{todo_id}/done")
-def mark_todo_done(todo_id: int):
+@app.post("/info_items")
+def new_info_item(title: str, detail: str, due_date: date):
+    uuid = UUID()
+    
     db = load_db()
-    if todo_id not in db:
-        raise HTTPException(status_code=404, detail="Todo not found.")
-    db[todo_id].status = Status.Done
+    item = InfoItem(id=uuid, title=title, detail=detail, due_date=due_date)
+    db[uuid] = item
+
+@app.post("/info_items/{info_item_id}/done")
+def mark_info_item_done(info_item_id: UUID):
+    db = load_db()
+    if info_item_id not in db:
+        raise HTTPException(status_code=404, detail="info_item not found.")
+    db[info_item_id].status = Status.Done
     save_db(db)
-    return {"message": f"Todo {todo_id} marked as Done."}
+    return {"message": f"info_item {info_item_id} marked as Done."}
