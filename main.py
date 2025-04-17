@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date
 from enum import Enum
 from uuid import uuid4
@@ -5,7 +6,7 @@ from uuid import UUID
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 import pickle
 import os
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +18,19 @@ DB_FILE = "database.pkl"
 
 class Status(Enum):
     Active = 1
-    Done = 2
+    Inactive = 2
+    Done = 3
+
+class Recurrence(Enum):
+    Once = 1
+    Daily = 2
+    Always = 3
+
+@dataclass
+class Tracking:
+    recurrence: Recurrence
+    review_date: Optional[date] # If this has a particular review date (e.g. the due date of a todo, the next time to reflect on a certain thing, the time to review whether to reactivate something else)
+    status: Status
 
 class NewInfoItem(BaseModel):
     title: str
@@ -30,6 +43,7 @@ class InfoItem(BaseModel):
     detail: str
     due_date: date
     status: Status = Status.Active
+    # Add date created
 
 class Database:
     def __init__(self, db_file: str):

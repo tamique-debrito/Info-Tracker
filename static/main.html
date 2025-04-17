@@ -65,24 +65,24 @@
     <div id="todo-list">Loading...</div>
     <hr />
     <button id="newTodoButton">Add Todo</button>
+
     <div id="newTodoModal" class="modal"> <!-- Currently this is just for creating a new todo. May want to create dynamically if more modal types are required -->
         <div class="modal-content">
-          <span class="close-modal-button" id="close-modal-button">&times;</span>
-          <h2>Add New Todo</h2>
-          <form id="todo-form">
-            <label>
-                Title: <input type="text" name="title" required>
-            </label><br><br>
-            <label>
-                Detail: <input type="text" name="detail" required>
-            </label><br><br>
-            <label>
-                Due Date: <input type="date" name="due_date" required>
-            </label><br><br>
-            <button type="submit">Add Todo</button>
-        </form>
+            <span class="close-modal-button" id="close-modal-button">&times;</span>
+            <h2>Add New Todo</h2>
+            <form id="todo-form">
+                <label>
+                    Title: <input type="text" name="title" required>
+                </label><br><br>
+                <label>
+                    Detail: <input type="text" name="detail" required>
+                </label><br><br>
+                <label>
+                    Due Date: <input type="date" name="due_date" required>
+                </label><br><br>
+                <button type="submit">Add Todo</button>
+            </form>
         </div>
-      
     </div>
     <script>
         async function loadTodos() {
@@ -145,9 +145,7 @@
                 if (!response.ok) {
                     throw new Error(`Failed to mark as done: ${response.statusText}`);
                 }
-
-                alert('Marked as done!');
-                loadTodos(); // refresh the list
+                loadTodos();
             } catch (error) {
                 alert('Error: ' + error.message);
                 console.error(error);
@@ -177,15 +175,7 @@
                 if (!response.ok) {
                     throw new Error(`Server error: ${response.statusText}`);
                 }
-
-                alert('Todo added successfully!');
                 form.reset();
-
-                // Optionally refresh the todo list
-                if (typeof loadTodos === 'function') {
-                    loadTodos();
-                }
-
             } catch (err) {
                 alert('Failed to add todo: ' + err.message);
                 console.error(err);
