@@ -1,80 +1,17 @@
-from dataclasses import dataclass
-from datetime import date
-from enum import Enum
 from uuid import uuid4
 from uuid import UUID
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
-from pydantic import BaseModel
-from typing import Dict, Optional
-import pickle
-import os
+from typing import Optional
 from fastapi.staticfiles import StaticFiles
+
+from Database import DB_FILE, Database
+from Models.InfoItem import InfoItem
+from Models.InfoItem import Status
+from Models.InfoItem import NewInfoItem
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-DB_FILE = "database.pkl"
-
-class Status(Enum):
-    Active = 1
-    Inactive = 2
-    Done = 3
-
-class Recurrence(Enum):
-    Once = 1
-    Daily = 2
-    Always = 3
-
-@dataclass
-class Tracking:
-    recurrence: Recurrence
-    review_date: Optional[date] # If this has a particular review date (e.g. the due date of a todo, the next time to reflect on a certain thing, the time to review whether to reactivate something else)
-    status: Status
-
-class NewInfoItem(BaseModel):
-    title: str
-    detail: str
-    due_date: date
-
-class InfoItem(BaseModel):
-    id: UUID
-    title: str
-    detail: str
-    due_date: date
-    status: Status = Status.Active
-    # Add date created
-
-class Database:
-    def __init__(self, db_file: str):
-        self.db_file = db_file
-
-    def load(self) -> Dict[UUID, InfoItem]:
-        if os.path.exists(self.db_file):
-            with open(self.db_file, "rb") as f:
-                return pickle.load(f)
-        return {}
-
-    def save(self, db: Dict[UUID, InfoItem]):
-        with open(self.db_file, "wb") as f:
-            pickle.dump(db, f)
-    
-    def get_all_items(self):
-        return self.load().values()
-
-    def get_item(self, id: UUID):
-        data = self.load()
-        if id not in data:
-            return None
-        return data[id]
-
-    def add_item(self, item: InfoItem):
-        data = self.load()
-        data[item.id] = item
-        self.save(data)
-    
-    def update_item(self, item: InfoItem):
-        self.add_item(item)
 
 db_instance = Database(DB_FILE)
 
