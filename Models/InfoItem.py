@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -39,4 +40,4 @@ class Recurrence(Enum):
 class Tracking:
     recurrence: Recurrence
     review_date: Optional[date] # If this has a particular review date (e.g. the due date of a todo, the next time to reflect on a certain thing, the time to review whether to reactivate something else)
-    status: Status
+    status: Status = Status.Active

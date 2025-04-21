@@ -31,23 +31,30 @@ async function loadTodos() {
     }
 }
 
-window.onload = loadTodos;
-
-// Modal handling
-var modal = document.getElementById("newTodoModal");
-var btn = document.getElementById("newTodoButton");
-var span = document.getElementById("close-modal-button");
-btn.onclick = function() {
-    modal.style.display = "block";
-}
-span.onclick = function() {
-    modal.style.display = "none";
-}
-window.onclick = function(event) {
-    if (event.target == modal) {
+async function SetUpModal() {
+    // Modal handling
+    var modal = document.getElementById("newTodoModal");
+    var btn = document.getElementById("newTodoButton");
+    var span = document.getElementById("close-modal-button");
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+    span.onclick = function() {
         modal.style.display = "none";
     }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
 }
+
+async function initialLoad() {
+    await loadTodos();
+    await SetUpModal();
+}
+
+window.onload = initialLoad;
 
 // Handle marking todos as done
 async function markAsDone(id) {
