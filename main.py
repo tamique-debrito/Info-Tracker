@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi.staticfiles import StaticFiles
 
 from Database import DB_FILE, Database
-from Models.InfoItem import InfoItem
+from Models.InfoItem import InfoItem, Tracking
 from Models.InfoItem import Status
 from Models.InfoItem import NewInfoItem
 
@@ -21,12 +21,13 @@ def get_main_page():
 
 @app.get("/info_items")
 def get_info_items():
-    items = db_instance.get_all_items()
+    items = db_instance.get_all_active_items()
     return [info_item.dict() for info_item in items]
 
 @app.post("/info_items")
 def new_info_item(new_item: NewInfoItem):
     uuid = uuid4()
+    tracking = Tracking()
     item = InfoItem(id=uuid, title=new_item.title, detail=new_item.detail, due_date=new_item.due_date)
     db_instance.add_item(item)
 

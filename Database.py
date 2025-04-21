@@ -1,4 +1,4 @@
-from Models.InfoItem import InfoItem
+from Models.InfoItem import InfoItem, Status
 
 
 import os
@@ -23,6 +23,9 @@ class Database:
 
     def get_all_items(self):
         return self.load().values()
+
+    def get_all_active_items(self):
+        return [item for item in self.get_all_items() if item.tracking.status == Status.Active]
 
     def get_item(self, id: UUID):
         data = self.load()
