@@ -9,13 +9,23 @@ from fastapi.staticfiles import StaticFiles
 
 from Database import DB_FILE, Database
 from Models.InfoItem import InfoItem, Recurrence, Tracking
-from Models.InfoItem import Status
 from Models.InfoItem import NewInfoItem
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 db_instance = Database(DB_FILE)
+
+
+def update_info_item_op(info_item_id: UUID, operation, success_message):
+    # Helper function to simplify code for simple operations
+    item = db_instance.get_item(info_item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail=f"info_item {info_item_id} not found.")
+    operation(item)
+    db_instance.update_item(item)
+    return {"message": success_message}
+
 
 @app.get("/", response_class=HTMLResponse)
 def get_main_page():
@@ -34,37 +44,33 @@ def new_info_item(new_item: NewInfoItem):
     db_instance.add_item(item)
 
 @app.post("/info_items/{info_item_id}/done")
-def mark_info_item_done(info_item_id: UUID):    
-    item = db_instance.get_item(info_item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="info_item not found.")
-    item.mark_done()
-    db_instance.update_item(item)
-    return {"message": f"info_item {info_item_id} marked as Done."}
+def mark_info_item_done(info_item_id: UUID):
+    return update_info_item_op(
+        info_item_id,
+        lambda item: item.mark_done(),
+        f"info_item {info_item_id} marked as Done."
+    )
 
 @app.post("/info_items/{info_item_id}/deactivate")
-def deactivate_info_item(info_item_id: UUID, review_date: date):    
-    item = db_instance.get_item(info_item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="info_item not found.")
-    item.deactivate(review_date)
-    db_instance.update_item(item)
-    return {"message": f"info_item {info_item_id} deactivated."}
+def deactivate_info_item(info_item_id: UUID, review_date: date):
+    return update_info_item_op(
+        info_item_id,
+        lambda item: item.deactivate(review_date),
+        f"info_item {info_item_id} deactivated."
+    )
 
 @app.post("/info_items/{info_item_id}/reactivate")
-def reactivate_info_item(info_item_id: UUID, review_date: date):    
-    item = db_instance.get_item(info_item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="info_item not found.")
-    item.reactivate(review_date)
-    db_instance.update_item(item)
-    return {"message": f"info_item {info_item_id} reactivated."}
+def reactivate_info_item(info_item_id: UUID, review_date: date):
+    return update_info_item_op(
+        info_item_id,
+        lambda item: item.reactivate(review_date),
+        f"info_item {info_item_id} reactivated."
+    )
 
 @app.post("/info_items/{info_item_id}/defer")
-def defer_info_item(info_item_id: UUID, review_date: date):    
-    item = db_instance.get_item(info_item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="info_item not found.")
-    item.set_review_date(review_date)
-    db_instance.update_item(item)
-    return {"message": f"info_item {info_item_id} deferred."}
+def defer_info_item(info_item_id: UUID, review_date: date):
+    return update_info_item_op(
+        info_item_id,
+        lambda item: item.set_review_date(review_date),
+        f"info_item {info_item_id} deferred."
+    )
