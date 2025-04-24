@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import uuid4
 from uuid import UUID
 from fastapi import FastAPI, HTTPException
@@ -39,3 +40,30 @@ def mark_info_item_done(info_item_id: UUID):
     item.mark_done()
     db_instance.update_item(item)
     return {"message": f"info_item {info_item_id} marked as Done."}
+
+@app.post("/info_items/{info_item_id}/deactivate")
+def deactivate_info_item(info_item_id: UUID, review_date: date):    
+    item = db_instance.get_item(info_item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="info_item not found.")
+    item.deactivate(review_date)
+    db_instance.update_item(item)
+    return {"message": f"info_item {info_item_id} deactivated."}
+
+@app.post("/info_items/{info_item_id}/deactivate")
+def deactivate_info_item(info_item_id: UUID, review_date: date):    
+    item = db_instance.get_item(info_item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="info_item not found.")
+    item.deactivate(review_date)
+    db_instance.update_item(item)
+    return {"message": f"info_item {info_item_id} reactivated."}
+
+@app.post("/info_items/{info_item_id}/defer")
+def defer_info_item(info_item_id: UUID, review_date: date):    
+    item = db_instance.get_item(info_item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="info_item not found.")
+    item.set_review_date(review_date)
+    db_instance.update_item(item)
+    return {"message": f"info_item {info_item_id} deferred."}
