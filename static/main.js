@@ -18,8 +18,8 @@ async function loadTodos() {
             todoDiv.innerHTML = `
                 <div class="title">${item.title}</div>
                 <div class="detail">Detail: ${item.detail}</div>
-                <div class="due-date">Due Date: ${item.due_date}</div>
-                <div class="status">Status: ${item.status}</div>
+                <div class="due-date">Target Date: ${item.tracking.review_date}</div>
+                <div class="status">Status: ${item.tracking.status}</div>
                 <button onclick="markAsDone('${item.id}')">Mark Done</button>
             `;
 
@@ -47,6 +47,7 @@ async function SetUpModal() {
             modal.style.display = "none";
         }
     }
+    document.getElementById('todo-form').addEventListener('submit', submitNewTodo);
 }
 
 async function initialLoad() {
@@ -73,8 +74,7 @@ async function markAsDone(id) {
     }
 }
 
-// Handle creating a new todo
-document.getElementById('todo-form').addEventListener('submit', async function(e) {
+async function submitNewTodo(e) {
     e.preventDefault();
     
     const form = e.target;
@@ -82,7 +82,7 @@ document.getElementById('todo-form').addEventListener('submit', async function(e
 
     const title = formData.get('title');
     const detail = formData.get('detail');
-    const due_date = formData.get('due_date');
+    const target_date = formData.get('target_date');
 
     try {
         const response = await fetch('/info_items', {
@@ -90,7 +90,7 @@ document.getElementById('todo-form').addEventListener('submit', async function(e
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ title, detail, due_date })
+            body: JSON.stringify({ title, detail, target_date })
         });
 
         if (!response.ok) {
@@ -101,4 +101,4 @@ document.getElementById('todo-form').addEventListener('submit', async function(e
         alert('Failed to add todo: ' + err.message);
         console.error(err);
     }
-});
+}

@@ -16,20 +16,6 @@ class Status(Enum):
     Done = 3
 
 
-class InfoItem(BaseModel):
-    id: UUID
-    title: str
-    detail: str
-    due_date: date
-    status: Status = Status.Active
-
-
-class NewInfoItem(BaseModel):
-    title: str
-    detail: str
-    due_date: date
-
-
 class Recurrence(Enum):
     Once = 1
     Daily = 2
@@ -41,3 +27,19 @@ class Tracking:
     recurrence: Recurrence
     review_date: Optional[date] # If this has a particular review date (e.g. the due date of a todo, the next time to reflect on a certain thing, the time to review whether to reactivate something else)
     status: Status = Status.Active
+
+class NewInfoItem(BaseModel):
+    title: str
+    detail: str
+    target_date: date
+
+class InfoItem(BaseModel):
+    id: UUID
+    title: str
+    detail: str
+    tracking: Tracking
+
+    def mark_done(self):
+        self.tracking.status = Status.Done
+
+

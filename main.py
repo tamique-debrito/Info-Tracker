@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi.staticfiles import StaticFiles
 
 from Database import DB_FILE, Database
-from Models.InfoItem import InfoItem, Tracking
+from Models.InfoItem import InfoItem, Recurrence, Tracking
 from Models.InfoItem import Status
 from Models.InfoItem import NewInfoItem
 
@@ -27,15 +27,15 @@ def get_info_items():
 @app.post("/info_items")
 def new_info_item(new_item: NewInfoItem):
     uuid = uuid4()
-    tracking = Tracking()
-    item = InfoItem(id=uuid, title=new_item.title, detail=new_item.detail, due_date=new_item.due_date)
+    tracking = Tracking(recurrence=Recurrence.Once, review_date=new_item.target_date)
+    item = InfoItem(id=uuid, title=new_item.title, detail=new_item.detail, tracking=tracking)
     db_instance.add_item(item)
 
 @app.post("/info_items/{info_item_id}/done")
-def mark_info_item_done(info_item_id: UUID):
+def mark_info_item_done(info_item_id: UUID):    
     item = db_instance.get_item(info_item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="info_item not found.")
-    item.status = Status.Done
+    item.mark_done()
     db_instance.update_item(item)
     return {"message": f"info_item {info_item_id} marked as Done."}
