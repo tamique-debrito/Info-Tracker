@@ -1,0 +1,10 @@
+{
+    "VsCodeTaskButtons.showCounter": false,
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "Start App",
+            "task": "run-app",
+            "tooltip": "Start the server and open a webpage to it"
+        }
+    ]
+}

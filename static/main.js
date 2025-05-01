@@ -31,7 +31,35 @@ async function loadTodos() {
     }
 }
 
+function AddModalDiv() {
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'newTodoModal';
+    modalContainer.className = 'modal';
+    modalContainer.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal-button" id="close-modal-button">&times;</span>
+            <h2>Add New Todo</h2>
+            <form id="todo-form">
+                <label>
+                    Title: <input type="text" name="title" required>
+                </label><br><br>
+                <label>
+                    Detail: <input type="text" name="detail" required>
+                </label><br><br>
+                <label>
+                    Target Date: <input type="date" name="target_date" required>
+                </label><br><br>
+                <button type="submit">Add Todo</button>
+            </form>
+        </div>
+    `;
+
+    // Append the modal to the end of the body
+    document.body.appendChild(modalContainer);
+}
+
 async function SetUpModal() {
+    AddModalDiv();
     // Modal handling
     var modal = document.getElementById("newTodoModal");
     var btn = document.getElementById("newTodoButton");

@@ -9,6 +9,16 @@
         "presentation": {
           "reveal": "always",
         }
+      },
+      {
+        "label": "run-server",
+        "type": "shell",
+        "command": "uvicorn main:app --reload",
+      },
+      {
+        "label": "run-app",
+        "type": "shell",
+        "command": "./run.bat",
       }
     ]
 }
