@@ -31,7 +31,7 @@ async function loadTodos() {
     }
 }
 
-async function showModal(content) {
+async function fillAndShowModal(content) {
     var contentContainer = document.getElementById("modal-content-inner");
     var modal = document.getElementById("modal-container");
     contentContainer.innerHTML = content;
@@ -62,7 +62,7 @@ async function InitModalContainer() {
     closeModalButton.onclick = closeModal
 }
 
-async function SetupAndShowNewTodoModal() {
+async function SetUpAndShowNewTodoModal() {
     const modalContent= `
         <form id="todo-form">
             <label>
@@ -76,17 +76,19 @@ async function SetupAndShowNewTodoModal() {
             </label><br><br>
             <button type="submit">Add Todo</button>
         </form>`;
-    document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e); closeModal();});
+    fillAndShowModal(modalContent);
+    document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e); closeModal(); loadTodos();});
 }
 
-async function setupNewTodoButton() {
+async function setUpNewTodoButton() {
     var newTodoButton = document.getElementById("newTodoButton");
-    newTodoButton.onclick = SetupAndShowNewTodoModal
+    newTodoButton.onclick = SetUpAndShowNewTodoModal
 }
 
 async function initialLoad() {
     await loadTodos();
     await InitModalContainer();
+    await setUpNewTodoButton();
 }
 
 window.onload = initialLoad;
