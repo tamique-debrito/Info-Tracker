@@ -31,56 +31,62 @@ async function loadTodos() {
     }
 }
 
-function AddModalDiv() {
+async function showModal(content) {
+    var contentContainer = document.getElementById("modal-content-inner");
+    var modal = document.getElementById("modal-container");
+    contentContainer.innerHTML = content;
+    modal.style.display = "block";
+}
+
+async function closeModal() {
+    var contentContainer = document.getElementById("modal-content-inner");
+    var modal = document.getElementById("modal-container");
+    contentContainer.innerHTML = null;
+    modal.style.display = "none";
+}
+
+async function InitModalContainer() {
     const modalContainer = document.createElement('div');
-    modalContainer.id = 'newTodoModal';
+    modalContainer.id = 'modal-container';
     modalContainer.className = 'modal';
     modalContainer.innerHTML = `
-        <div class="modal-content">
+        <div class="modal-content-outer">
             <span class="close-modal-button" id="close-modal-button">&times;</span>
-            <h2>Add New Todo</h2>
-            <form id="todo-form">
-                <label>
-                    Title: <input type="text" name="title" required>
-                </label><br><br>
-                <label>
-                    Detail: <input type="text" name="detail" required>
-                </label><br><br>
-                <label>
-                    Target Date: <input type="date" name="target_date" required>
-                </label><br><br>
-                <button type="submit">Add Todo</button>
-            </form>
+            <div id="modal-content-inner"></div>
         </div>
     `;
 
     // Append the modal to the end of the body
     document.body.appendChild(modalContainer);
+    var closeModalButton = document.getElementById("close-modal-button");
+    closeModalButton.onclick = closeModal
 }
 
-async function SetUpModal() {
-    AddModalDiv();
-    // Modal handling
-    var modal = document.getElementById("newTodoModal");
-    var btn = document.getElementById("newTodoButton");
-    var span = document.getElementById("close-modal-button");
-    btn.onclick = function() {
-        modal.style.display = "block";
-    }
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
-    document.getElementById('todo-form').addEventListener('submit', submitNewTodo);
+async function SetupAndShowNewTodoModal() {
+    const modalContent= `
+        <form id="todo-form">
+            <label>
+                Title: <input type="text" name="title" required>
+            </label><br><br>
+            <label>
+                Detail: <input type="text" name="detail" required>
+            </label><br><br>
+            <label>
+                Target Date: <input type="date" name="target_date" required>
+            </label><br><br>
+            <button type="submit">Add Todo</button>
+        </form>`;
+    document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e); closeModal();});
+}
+
+async function setupNewTodoButton() {
+    var newTodoButton = document.getElementById("newTodoButton");
+    newTodoButton.onclick = SetupAndShowNewTodoModal
 }
 
 async function initialLoad() {
     await loadTodos();
-    await SetUpModal();
+    await InitModalContainer();
 }
 
 window.onload = initialLoad;

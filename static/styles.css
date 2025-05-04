@@ -15,7 +15,7 @@ background-color: rgb(0,0,0); /* Fallback color */
 background-color: rgba(0,0,0,0.4);
 }
 
-.modal-content {
+.modal-content-outer {
 background-color: #fefefe;
 margin: auto;
 padding: 20px;
