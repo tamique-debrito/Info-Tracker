@@ -67,10 +67,10 @@ def reactivate_info_item(info_item_id: UUID, review_date: date):
         f"info_item {info_item_id} reactivated."
     )
 
-@app.post("/info_items/{info_item_id}/defer")
-def defer_info_item(info_item_id: UUID, review_date: date):
+@app.post("/info_items/{info_item_id}/reschedule")
+def defer_info_item(info_item_id: UUID, new_review_date: date):
     return update_info_item_op(
         info_item_id,
-        lambda item: item.set_review_date(review_date),
+        lambda item: item.set_review_date(new_review_date),
         f"info_item {info_item_id} deferred."
     )
