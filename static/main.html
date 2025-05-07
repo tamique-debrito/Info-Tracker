@@ -3,14 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="/node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
     <script src="static/main.js"></script>
     <title>My Todos</title>
 </head>
 <body>
     <h1>My Todos</h1>
+    <button id="newTodoButton"><i class="bi bi-clipboard-plus icon-by-text"></i> Add Todo</button>
     <hr />
-    <div id="todo-list">Loading...</div>
+    
+    <div class="panes-container">
+        <div class="left-pane pane">
+            <h2>Today</h2>
+            <hr />
+            <div id="current-todos-list">Loading...</div>
+            <hr />
+            <div id="current-review-list">Loading...</div>
+        </div>
+        <div class="right-pane pane">
+            <h2>Upcoming</h2>
+            <hr />
+            <div id="upcoming-todos-list">Loading...</div>
+        </div>
+    </div>
     <hr />
-    <button id="newTodoButton">Add Todo</button>
 </body>
 </html>

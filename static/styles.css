@@ -1,5 +1,68 @@
 body {font-family: Arial, Helvetica, sans-serif;}
 
+.panes-container {
+    display: flex;
+    width: 50vw;
+}
+.pane {
+    padding: 1rem;
+    border: black;
+    border-width: 1px;
+    border-style: solid;
+}
+.left-pane {
+    width: 70%;
+    background-color: #f0f0f0;
+}
+.right-pane {
+    width: 30%;
+    background-color: #e0e0e0;
+    padding: 1rem;
+}
+
+.quick-button-group {
+    margin-left: 15px;
+    cursor: pointer;
+}
+
+.quick-button-group button {
+    cursor: pointer;
+}
+
+.form-submit-button {
+    background-color: rgb(104, 168, 104);
+    font-size: 20px;
+    padding: 10px;
+}
+
+.icon-by-text {
+    padding-right: 1px;
+}
+
+.close-modal-button:hover,
+.close-modal-button:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+body {
+    font-family: Arial, sans-serif;
+}
+.todo-item {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    border-bottom: 1px solid #ccc;
+}
+.todo-title {
+    font-weight: bold;
+    font-size: 1em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.detail, .due-date, .status {
+    margin-left: 1em;
+}
 /* The Modal (background) - copied from w3schools */
 .modal {
     display: none;
@@ -28,41 +91,4 @@ body {font-family: Arial, Helvetica, sans-serif;}
     float: right;
     font-size: 28px;
     font-weight: bold;
-}
-
-.quick-button-group {
-    margin-left: 15px;
-    cursor: pointer;
-}
-
-.quick-button-group button {
-    cursor: pointer;
-}
-
-.form-submit-button {
-    background-color: rgb(104, 168, 104);
-    font-size: 20px;
-    padding: 10px;
-}
-
-.close-modal-button:hover,
-.close-modal-button:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-}
-body {
-    font-family: Arial, sans-serif;
-}
-.todo-item {
-    margin-bottom: 1em;
-    padding: 0.5em;
-    border-bottom: 1px solid #ccc;
-}
-.title {
-    font-weight: bold;
-    font-size: 1.2em;
-}
-.detail, .due-date, .status {
-    margin-left: 1em;
 }
