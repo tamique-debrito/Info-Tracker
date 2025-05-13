@@ -6,13 +6,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from typing import Optional
 from fastapi.staticfiles import StaticFiles
+import uvicorn
 
 from Database import DB_FILE, Database
-from Models.InfoItem import InfoItem, Recurrence, Tracking
+from Models.InfoItem import InfoItem, Recurrence, Status, Tracking
 from Models.InfoItem import NewInfoItem
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/node_modules/bootstrap-icons/font/", StaticFiles(directory="node_modules/bootstrap-icons/font/"), name="bootstrap-icons")
 
 db_instance = Database(DB_FILE)
 
@@ -33,14 +35,14 @@ def get_main_page():
 
 @app.get("/info_items")
 def get_info_items():
-    items = db_instance.get_all_active_items()
+    items = db_instance.get_all_items_by_status([Status.Active, Status.Inactive])
     return [info_item.dict() for info_item in items]
 
 @app.post("/info_items")
 def new_info_item(new_item: NewInfoItem):
     uuid = uuid4()
     tracking = Tracking(recurrence=Recurrence.Once, review_date=new_item.target_date)
-    item = InfoItem(id=uuid, title=new_item.title, detail=new_item.detail, tracking=tracking)
+    item = InfoItem(id=uuid, title=new_item.title, detail=new_item.detail, tracking=tracking, todo_type=new_item.todo_type)
     db_instance.add_item(item)
 
 @app.post("/info_items/{info_item_id}/done")
@@ -74,3 +76,16 @@ def defer_info_item(info_item_id: UUID, new_review_date: date):
         lambda item: item.set_review_date(new_review_date),
         f"info_item {info_item_id} deferred."
     )
+
+
+@app.post("/info_items/{info_item_id}/change_status")
+def set_status_info_item(info_item_id: UUID, review_date: date, new_status: Optional[int]  = None):
+    new_status_enum = None if new_status is None else Status(new_status)
+    return update_info_item_op(
+        info_item_id,
+        lambda item: item.set_status(review_date, new_status_enum),
+        f"info_item {info_item_id} status updated."
+    )
+
+if __name__ == "__main__":
+    uvicorn.run(app, port=8000)
