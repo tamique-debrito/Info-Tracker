@@ -1,36 +1,35 @@
+const Status = Object.freeze({
+    ACTIVE: 1,
+    INACTIVE: 2,
+    DONE: 3,
+});
 
-async function loadTodos() {
-    try {
-        const response = await fetch('/info_items');
-        const todos = await response.json();
+const TodoType = Object.freeze({
+    TODO: 1,
+    PROJECT_IDEA: 2,
+    PHILOSOPHICAL_IDEA: 3,
+});
 
-        const container = document.getElementById('todo-list');
-        container.innerHTML = '';
+const ChangeStatusAction = Object.freeze({
+    DEACTIVATE: 1,
+    REACTIVATE: 2,
+    RESCHEDULE_ONLY: 3,
+});
 
-        if (todos.length === 0) {
-            container.innerHTML = "No Todos found"
-        }
-
-        todos.forEach(item => {
-            const todoDiv = document.createElement('div');
-            todoDiv.className = 'todo-item';
-
-            todoDiv.innerHTML = `
-                <div class="title">${item.title}</div>
-                <div class="detail">Detail: ${item.detail}</div>
-                <div class="due-date">Target Date: ${item.tracking.review_date}</div>
-                <div class="status">Status: ${item.tracking.status}</div>
-                <button onclick="markAsDone('${item.id}')">Mark Done</button>
-            `;
-
-            container.appendChild(todoDiv);
-        });
-    } catch (error) {
-        document.getElementById('todo-list').innerText = 'Failed to load todos.';
-        console.error('Error loading todos:', error);
+function getTodoTypeText(todoType) {
+    switch (todoType) {
+        case TodoType.TODO:
+            return "(Todo)";
+        case TodoType.PROJECT_IDEA:
+            return "(Project)";
+        case TodoType.PHILOSOPHICAL_IDEA:
+            return "(Philosophical)";
+        default:
+            return "";
     }
 }
 
+//##################### Modal Handling
 async function fillAndShowModal(content) {
     var contentContainer = document.getElementById("modal-content-inner");
     var modal = document.getElementById("modal-container");
@@ -45,7 +44,7 @@ async function closeModal() {
     modal.style.display = "none";
 }
 
-async function InitModalContainer() {
+async function initModalContainer() {
     const modalContainer = document.createElement('div');
     modalContainer.id = 'modal-container';
     modalContainer.className = 'modal';
@@ -62,8 +61,9 @@ async function InitModalContainer() {
     closeModalButton.onclick = closeModal
 }
 
-async function SetUpAndShowNewTodoModal() {
+async function setUpAndShowNewTodoModal() {
     const modalContent= `
+        <h2>New Todo</h2>
         <form id="todo-form">
             <label>
                 Title: <input type="text" name="title" required>
@@ -72,31 +72,168 @@ async function SetUpAndShowNewTodoModal() {
                 Detail: <input type="text" name="detail" required>
             </label><br><br>
             <label>
+                Type: <select name="todo_type" required>
+                    <option value="${TodoType.TODO}">Todo</option>
+                    <option value="${TodoType.PROJECT_IDEA}">Project Idea</option>
+                    <option value="${TodoType.PHILOSOPHICAL_IDEA}">Philosophical Idea</option>
+                </select>
+            </label><br><br>
+            <label>
                 Target Date: <input type="date" name="target_date" required>
             </label><br><br>
-            <button type="submit">Add Todo</button>
+            <button type="submit" class="form-submit-button">Add Todo</button>
         </form>`;
     fillAndShowModal(modalContent);
     document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e); closeModal(); loadTodos();});
 }
 
+async function setUpAndShowChangeStatusModal(todoName, todoId, changeAction) {
+    const changedReviewDateId = "deactivate-date-input";
+    let actionTitle;
+    if (changeAction === ChangeStatusAction.DEACTIVATE) {
+        actionTitle = "Deactivate"
+    } else if (changeAction === ChangeStatusAction.RESCHEDULE_ONLY) {
+        actionTitle = "Defer"
+    } else if (changeAction === ChangeStatusAction.REACTIVATE) {
+        actionTitle = "Reactivate"
+    }
+    const modalContent = `
+        <h2>${actionTitle} "${todoName}"</h2>
+        <form id="change-status-reschedule-form">
+            <label>
+                Review Date: <input id="${changedReviewDateId}" type="date" name="review_date" required>
+                <div class="quick-button-group">
+                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 1)">Tomorrow</button>
+                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 3)">3 days</button>
+                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 7)">1 week</button>
+                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 14)">2 weeks</button>
+                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 30)">1 month</button>
+                </div>
+            </label><br><br>
+            <button type="submit" class="form-submit-button">${actionTitle}</button>
+        </form>
+    `;
+    await fillAndShowModal(modalContent);
+    document.getElementById('change-status-reschedule-form').addEventListener('submit', (e) => {changeStatusTodo(e, todoId, changeAction); closeModal(true); loadTodos();});
+}
+
+//##################################### Loading and page init/setup
+
+async function loadTodos() {
+    try {
+        const response = await fetch('/info_items');
+        const todos = await response.json();
+
+        const currentTodosContainer = document.getElementById('current-todos-list');
+        const upcomingTodosContainer = document.getElementById('upcoming-todos-list');
+        const currentReviewContainer = document.getElementById('current-review-list');
+        currentTodosContainer.innerHTML = '';
+        upcomingTodosContainer.innerHTML = '';
+        currentReviewContainer.innerHTML = '';
+
+        let currentTodos = 0, upcomingTodos = 0, currentToReview = 0;
+
+        todos.forEach(todo => {
+            if (todo.tracking.status === Status.ACTIVE) {
+                if (new Date(todo.tracking.review_date) <= new Date()) {
+                    addTodoToCurrent(currentTodosContainer, todo);
+                    currentTodos += 1;
+                } else {
+                    addTodoToUpcoming(upcomingTodosContainer, todo);
+                    upcomingTodos += 1;
+                }
+
+            } else if (todo.tracking.status === Status.INACTIVE) {
+                addTodoToReview(currentReviewContainer, todo);
+                currentToReview += 1;
+            }
+        });
+        if (currentTodos === 0) {
+            currentTodosContainer.innerHTML = "No Todos found"
+        }
+        if (upcomingTodos === 0) {
+            upcomingTodosContainer.innerHTML = "No Todos found"
+        }
+    } catch (error) {
+        document.getElementById('current-todos-list').innerText = 'Failed to load todos.';
+        console.error('Error loading todos:', error);
+    }
+}
+
+function generateTodoTitleElement(todo, prefix = "") {
+    return `<div class="todo-title" title="${todo.detail}">${prefix}${todo.title} ${getTodoTypeText(todo.todo_type)}</div>`;
+}
+
+function addTodoToCurrent(container, todo) {
+    const todoDiv = document.createElement('div');
+    todoDiv.className = 'todo-item';
+
+    todoDiv.innerHTML = `
+        ${generateTodoTitleElement(todo)}
+        <button onclick="markAsDone('${todo.id}')"><i class="bi bi-check2-circle icon-by-text"></i> Done</button>
+        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.RESCHEDULE_ONLY)"><i class="bi bi-stopwatch icon-by-text"></i> Defer</button>
+        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.DEACTIVATE)"><i class="bi bi-bell-slash icon-by-text"></i> Deactivate</button>
+    `;
+
+    container.appendChild(todoDiv);
+}
+
+function addTodoToReview(container, todo) {
+    const todoDiv = document.createElement('div');
+    todoDiv.className = 'todo-item';
+
+    todoDiv.innerHTML = `
+        ${generateTodoTitleElement(todo, "Review: ")}
+        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.RESCHEDULE_ONLY)"><i class="bi bi-stopwatch icon-by-text"></i> Leave Inactive</button>
+        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.REACTIVATE)"><i class="bi bi-bell icon-by-text"></i> Reactivate</button>
+    `;
+
+    container.appendChild(todoDiv);
+}
+
+function addTodoToUpcoming(container, todo) {
+    const todoDiv = document.createElement('div');
+    todoDiv.className = 'todo-item';
+
+    todoDiv.innerHTML = `
+        ${generateTodoTitleElement(todo)}<div class="due-date">Target Date: ${todo.tracking.review_date}</div>
+    `;
+
+    container.appendChild(todoDiv);
+}
+
 async function setUpNewTodoButton() {
     var newTodoButton = document.getElementById("newTodoButton");
-    newTodoButton.onclick = SetUpAndShowNewTodoModal
+    newTodoButton.onclick = setUpAndShowNewTodoModal
 }
 
 async function initialLoad() {
     await loadTodos();
-    await InitModalContainer();
+    await initModalContainer();
     await setUpNewTodoButton();
 }
 
 window.onload = initialLoad;
 
-// Handle marking todos as done
-async function markAsDone(id) {
+
+//############################ Utils
+function setFutureDateInInput(inputId, daysAhead) {
+    const today = new Date();
+    today.setDate(today.getDate() + daysAhead);
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const futureDate = `${yyyy}-${mm}-${dd}`;
+    document.getElementById(inputId).value = futureDate;
+}
+
+
+//############################ API calls
+
+// Mark a todo as done
+async function markAsDone(todoId) {
     try {
-        const response = await fetch(`/info_items/${id}/done`, {
+        const response = await fetch(`/info_items/${todoId}/done`, {
             method: 'POST'
         });
 
@@ -119,6 +256,7 @@ async function submitNewTodo(e) {
     const title = formData.get('title');
     const detail = formData.get('detail');
     const target_date = formData.get('target_date');
+    const todo_type = parseInt(formData.get('todo_type'));
 
     try {
         const response = await fetch('/info_items', {
@@ -126,7 +264,7 @@ async function submitNewTodo(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ title, detail, target_date })
+            body: JSON.stringify({ title, detail, target_date, todo_type })
         });
 
         if (!response.ok) {
@@ -135,6 +273,31 @@ async function submitNewTodo(e) {
         form.reset();
     } catch (err) {
         alert('Failed to add todo: ' + err.message);
+        console.error(err);
+    }
+}
+
+async function changeStatusTodo(e, todoId, changeAction) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData(form);
+    const reviewDate = formData.get('review_date');
+
+    let newStatus = changeAction === ChangeStatusAction.RESCHEDULE_ONLY? null : (changeAction === ChangeStatusAction.DEACTIVATE? Status.INACTIVE : Status.ACTIVE)
+
+    try {
+        const response = await fetch(`/info_items/${todoId}/change_status?review_date=${reviewDate}${newStatus? "&new_status=" + newStatus : ""}`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to change status: ${response.statusText}`);
+        }
+
+        form.reset();
+    } catch (err) {
+        alert('Failed to change status of todo: ' + err.message);
         console.error(err);
     }
 }
