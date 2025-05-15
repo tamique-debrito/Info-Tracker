@@ -114,7 +114,7 @@ async function setUpAndShowChangeStatusModal(todoName, todoId, changeAction) {
         </form>
     `;
     await fillAndShowModal(modalContent);
-    document.getElementById('change-status-reschedule-form').addEventListener('submit', (e) => {changeStatusTodo(e, todoId, changeAction); closeModal(true); loadTodos();});
+    document.getElementById('change-status-reschedule-form').addEventListener('submit', (e) => {changeStatusTodo(e, todoId, changeAction); closeModal(); loadTodos();});
 }
 
 //##################################### Loading and page init/setup

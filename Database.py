@@ -28,8 +28,8 @@ class Database:
     def get_all_active_items(self):
         return [item for item in self.get_all_items() if item.tracking.status == Status.Active]
     
-    def get_all_items_by_status(self, statuses: list[Status], lookback_days=3):
-        return [item for item in self.get_all_items() if item.tracking.status in statuses and item.tracking.review_date <= date.today() + timedelta(days=lookback_days)
+    def get_all_items_by_status(self, statuses: list[Status], lookforward_days=3):
+        return [item for item in self.get_all_items() if item.tracking.status in statuses and item.tracking.review_date <= date.today() + timedelta(days=lookforward_days)
 ]
 
     def get_item(self, id: UUID):
