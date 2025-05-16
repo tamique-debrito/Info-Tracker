@@ -84,7 +84,7 @@ async function setUpAndShowNewTodoModal() {
             <button type="submit" class="form-submit-button">Add Todo</button>
         </form>`;
     fillAndShowModal(modalContent);
-    document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e); closeModal(); loadTodos();});
+    document.getElementById('todo-form').addEventListener('submit', (e) => {submitNewTodo(e).then(() => {closeModal(); loadTodos();});});
 }
 
 async function setUpAndShowChangeStatusModal(todoName, todoId, changeAction) {
@@ -102,19 +102,19 @@ async function setUpAndShowChangeStatusModal(todoName, todoId, changeAction) {
         <form id="change-status-reschedule-form">
             <label>
                 Review Date: <input id="${changedReviewDateId}" type="date" name="review_date" required>
-                <div class="quick-button-group">
-                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 1)">Tomorrow</button>
-                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 3)">3 days</button>
-                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 7)">1 week</button>
-                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 14)">2 weeks</button>
-                    <button type="button" onclick="setFutureDateInInput('${changedReviewDateId}', 30)">1 month</button>
-                </div>
+                <div id="future-date-buttons" class="quick-buttons-after-input"></div>
             </label><br><br>
             <button type="submit" class="form-submit-button">${actionTitle}</button>
         </form>
     `;
     await fillAndShowModal(modalContent);
-    document.getElementById('change-status-reschedule-form').addEventListener('submit', (e) => {changeStatusTodo(e, todoId, changeAction); closeModal(); loadTodos();});
+    
+    // Add the future date buttons after the modal content is rendered
+    const buttonContainer = document.getElementById('future-date-buttons');
+    const buttonGroup = createFutureDateButtonGroup((days) => setFutureDateInInput(changedReviewDateId, days));
+    buttonContainer.appendChild(buttonGroup);
+    
+    document.getElementById('change-status-reschedule-form').addEventListener('submit', (e) => {changeStatusTodo(e, todoId, changeAction).then(() => {closeModal(); loadTodos();});});
 }
 
 //##################################### Loading and page init/setup
@@ -164,16 +164,118 @@ function generateTodoTitleElement(todo, prefix = "") {
     return `<div class="todo-title" title="${todo.detail}">${prefix}${todo.title} ${getTodoTypeText(todo.todo_type)}</div>`;
 }
 
+function formatFutureDate(daysAhead) {
+    const today = new Date();
+    today.setDate(today.getDate() + daysAhead);
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function setFutureDateInInput(inputId, daysAhead) {
+    document.getElementById(inputId).value = formatFutureDate(daysAhead);
+}
+
+function createFutureDateButton(days, label, onClickCallback) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.onclick = () => onClickCallback(days);
+    return button;
+}
+
+function createFutureDateButtonGroup(onClickCallback, useAbbreviatedLabels = false) {
+    const buttonGroup = document.createElement('div');
+    buttonGroup.className = 'quick-button-group';
+    
+    const buttonConfigs = [
+        { days: 1, label: 'Tomorrow', shortLabel: '1d' },
+        { days: 3, label: '3 days', shortLabel: '3d' },
+        { days: 7, label: '1 week', shortLabel: '1w' },
+        { days: 14, label: '2 weeks', shortLabel: '2w' },
+        { days: 30, label: '1 month', shortLabel: '1m' }
+    ];
+
+    buttonConfigs.forEach(config => {
+        const button = createFutureDateButton(
+            config.days, 
+            useAbbreviatedLabels ? config.shortLabel : config.label, 
+            onClickCallback
+        );
+        buttonGroup.appendChild(button);
+    });
+
+    return buttonGroup;
+}
+
+function createQuickDeferMenu(todoId, todoTitle) {
+    const menuContainer = document.createElement('div');
+    menuContainer.className = 'quick-defer-menu';
+    
+    const buttonGroup = createFutureDateButtonGroup((days) => {
+        const futureDate = formatFutureDate(days);
+        updateTodoStatus(
+            todoId,
+            ChangeStatusAction.RESCHEDULE_ONLY,
+            futureDate
+        ).then(() => loadTodos());
+    }, true); // Use abbreviated labels for the quick menu
+    
+    menuContainer.appendChild(buttonGroup);
+    return menuContainer;
+}
+
 function addTodoToCurrent(container, todo) {
     const todoDiv = document.createElement('div');
     todoDiv.className = 'todo-item';
 
-    todoDiv.innerHTML = `
-        ${generateTodoTitleElement(todo)}
-        <button onclick="markAsDone('${todo.id}')"><i class="bi bi-check2-circle icon-by-text"></i> Done</button>
-        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.RESCHEDULE_ONLY)"><i class="bi bi-stopwatch icon-by-text"></i> Defer</button>
-        <button onclick="setUpAndShowChangeStatusModal('${todo.title}', '${todo.id}', ChangeStatusAction.DEACTIVATE)"><i class="bi bi-bell-slash icon-by-text"></i> Deactivate</button>
-    `;
+    // Create title element
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'todo-title';
+    titleDiv.title = todo.detail;
+    titleDiv.textContent = `${todo.title} ${getTodoTypeText(todo.todo_type)}`;
+    todoDiv.appendChild(titleDiv);
+
+    // Create Done button
+    const doneButton = document.createElement('button');
+    doneButton.innerHTML = '<i class="bi bi-check2-circle icon-by-text"></i> Done';
+    doneButton.onclick = () => markAsDone(todo.id);
+    todoDiv.appendChild(doneButton);
+
+    // Create Defer button and menu
+    const deferButton = document.createElement('button');
+    deferButton.innerHTML = '<i class="bi bi-stopwatch icon-by-text"></i> Defer';
+    deferButton.className = 'defer-button';
+    deferButton.onclick = () => setUpAndShowChangeStatusModal(todo.title, todo.id, ChangeStatusAction.RESCHEDULE_ONLY);
+    
+    const quickDeferMenu = createQuickDeferMenu(todo.id, todo.title);
+    quickDeferMenu.style.display = 'none';
+    
+    deferButton.addEventListener('mouseenter', () => {
+        quickDeferMenu.style.display = 'block';
+    });
+    
+    deferButton.addEventListener('mouseleave', (e) => {
+        // Check if we're moving to the menu
+        const toElement = e.relatedTarget;
+        if (!quickDeferMenu.contains(toElement)) {
+            quickDeferMenu.style.display = 'none';
+        }
+    });
+    
+    quickDeferMenu.addEventListener('mouseleave', () => {
+        quickDeferMenu.style.display = 'none';
+    });
+
+    todoDiv.appendChild(deferButton);
+    todoDiv.appendChild(quickDeferMenu);
+
+    // Create Deactivate button
+    const deactivateButton = document.createElement('button');
+    deactivateButton.innerHTML = '<i class="bi bi-bell-slash icon-by-text"></i> Deactivate';
+    deactivateButton.onclick = () => setUpAndShowChangeStatusModal(todo.title, todo.id, ChangeStatusAction.DEACTIVATE);
+    todoDiv.appendChild(deactivateButton);
 
     container.appendChild(todoDiv);
 }
@@ -215,18 +317,7 @@ async function initialLoad() {
 
 window.onload = initialLoad;
 
-
 //############################ Utils
-function setFutureDateInInput(inputId, daysAhead) {
-    const today = new Date();
-    today.setDate(today.getDate() + daysAhead);
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const futureDate = `${yyyy}-${mm}-${dd}`;
-    document.getElementById(inputId).value = futureDate;
-}
-
 
 //############################ API calls
 
@@ -277,27 +368,35 @@ async function submitNewTodo(e) {
     }
 }
 
-async function changeStatusTodo(e, todoId, changeAction) {
+async function changeStatusTodo(e, todoId, changeAction, reviewDate = null) {
     e.preventDefault();
     
     const form = e.target;
-    const formData = new FormData(form);
-    const reviewDate = formData.get('review_date');
+    const formData = reviewDate ? null : new FormData(form);
+    const reviewDateValue = reviewDate || (formData ? formData.get('review_date') : null);
 
-    let newStatus = changeAction === ChangeStatusAction.RESCHEDULE_ONLY? null : (changeAction === ChangeStatusAction.DEACTIVATE? Status.INACTIVE : Status.ACTIVE)
+    await updateTodoStatus(todoId, changeAction, reviewDateValue);
+    
+    if (form) {
+        form.reset();
+    }
+}
+
+async function updateTodoStatus(todoId, changeAction, reviewDate) {
+    let newStatus = changeAction === ChangeStatusAction.RESCHEDULE_ONLY ? null : 
+                   (changeAction === ChangeStatusAction.DEACTIVATE ? Status.INACTIVE : Status.ACTIVE);
 
     try {
-        const response = await fetch(`/info_items/${todoId}/change_status?review_date=${reviewDate}${newStatus? "&new_status=" + newStatus : ""}`, {
+        const response = await fetch(`/info_items/${todoId}/change_status?review_date=${reviewDate}${newStatus ? "&new_status=" + newStatus : ""}`, {
             method: 'POST',
         });
 
         if (!response.ok) {
             throw new Error(`Failed to change status: ${response.statusText}`);
         }
-
-        form.reset();
     } catch (err) {
         alert('Failed to change status of todo: ' + err.message);
         console.error(err);
+        throw err;
     }
 }

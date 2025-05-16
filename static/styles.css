@@ -21,8 +21,11 @@ body {font-family: Arial, Helvetica, sans-serif;}
 }
 
 .quick-button-group {
-    margin-left: 15px;
     cursor: pointer;
+}
+
+.quick-buttons-after-input {
+    margin-left: 15px;
 }
 
 .quick-button-group button {
@@ -53,6 +56,9 @@ body {
     padding: 0.5em;
     border-bottom: 1px solid #ccc;
 }
+.todo-item > button {
+    margin-left: 5px;
+}
 .todo-title {
     font-weight: bold;
     font-size: 1em;
@@ -63,6 +69,39 @@ body {
 .detail, .due-date, .status {
     margin-left: 1em;
 }
+
+/* Quick Defer Menu */
+.quick-defer-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.todo-item {
+    position: relative;
+}
+
+.defer-button {
+    position: relative;
+}
+
+.quick-defer-menu .quick-button-group {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+}
+
+.quick-defer-menu button {
+    white-space: nowrap;
+    text-align: left;
+    padding: 2px 4px;
+}
+
+
 /* The Modal (background) - copied from w3schools */
 .modal {
     display: none;
@@ -92,3 +131,5 @@ body {
     font-size: 28px;
     font-weight: bold;
 }
+
+
