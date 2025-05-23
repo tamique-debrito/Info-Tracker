@@ -152,7 +152,7 @@ async function loadTodos() {
             currentTodosContainer.innerHTML = "No Todos found"
         }
         if (upcomingTodos === 0) {
-            upcomingTodosContainer.innerHTML = "No Todos found"
+            upcomingTodosContainer.innerHTML = "No Upcoming Todos found"
         }
     } catch (error) {
         document.getElementById('current-todos-list').innerText = 'Failed to load todos.';
@@ -209,18 +209,24 @@ function createFutureDateButtonGroup(onClickCallback, useAbbreviatedLabels = fal
     return buttonGroup;
 }
 
-function createQuickDeferMenu(todoId, todoTitle) {
-    const menuContainer = document.createElement('div');
-    menuContainer.className = 'quick-defer-menu';
-    
-    const buttonGroup = createFutureDateButtonGroup((days) => {
+function createQuickDeferMenu(todoId) {
+    callback = (days) => {
         const futureDate = formatFutureDate(days);
         updateTodoStatus(
             todoId,
             ChangeStatusAction.RESCHEDULE_ONLY,
             futureDate
         ).then(() => loadTodos());
-    }, true); // Use abbreviated labels for the quick menu
+    };
+    return createQuickDateMenu(callback);
+}
+
+function createQuickDateMenu(callback) {
+    // callback: (days) => {}. The logic to run to handle the interval the user clicked.
+    const menuContainer = document.createElement('div');
+    menuContainer.className = 'quick-date-menu';
+    
+    const buttonGroup = createFutureDateButtonGroup(callback, true); // Use abbreviated labels for the quick menu
     
     menuContainer.appendChild(buttonGroup);
     return menuContainer;
@@ -249,7 +255,7 @@ function addTodoToCurrent(container, todo) {
     deferButton.className = 'defer-button';
     deferButton.onclick = () => setUpAndShowChangeStatusModal(todo.title, todo.id, ChangeStatusAction.RESCHEDULE_ONLY);
     
-    const quickDeferMenu = createQuickDeferMenu(todo.id, todo.title);
+    const quickDeferMenu = createQuickDeferMenu(todo.id);
     quickDeferMenu.style.display = 'none';
     
     deferButton.addEventListener('mouseenter', () => {
